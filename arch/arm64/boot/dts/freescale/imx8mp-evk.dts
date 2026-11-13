@@ -1342,3 +1342,5 @@
 &dsp {
 	status = "okay";
 };
+
+#include "imx8mp-evk-safeg64.dtsi"

@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * SafeG64 specific overrides for i.MX8MP EVK
+ */
+
+/ {
+	reserved-memory {
+		/* Limit the upper bound to 0xB0000000 to avoid conflict with SafeG region (0xBE000000) */
+		linux,cma {
+			alloc-ranges = <0x0 0x40000000 0x0 0x70000000>;
+		};
+
+		/* Reserved memory for SafeG64 RTOS */
+		safeg64_rtos {
+			no-map;
+			reg = <0x0 0xBE000000 0x0 0x01000000>;
+		};
+
+		/* Reserved memory for SafeG64 inter-OS communication */
+		safeg64_com {
+			no-map;
+			reg = <0x0 0xBF000000 0x0 0x00800000>;
+		};
+	};
+
+	/* Inter-Processor Interrupt (IPI) node for DOSCOM */
+	doscom_ipi: doscom_ipi {
+		compatible = "doscom-gic-ipi";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>;
+	};
+};
+
+/* Configure CPU cores (A53_0-2 for Linux, A53_3 offline/reserved) */
+&A53_0 {
+	status = "okay";
+};
+
+&A53_1 {
+	status = "okay";
+};
+
+&A53_2 {
+	status = "okay";
+};
+
+&A53_3 {
+	status = "offline";
+};
+
+/* Override PCIe clocks and remove unused properties */
+&pcie {
+	clocks = <&clk IMX8MP_CLK_HSIO_AXI_DIV>,
+		 <&clk IMX8MP_CLK_PCIE_AUX>,
+		 <&clk IMX8MP_CLK_PCIE_PHY>,
+		 <&clk IMX8MP_CLK_PCIE_ROOT>;
+	/delete-property/ assigned-clock-rates;
+	/delete-property/ l1ss-disabled;
+};
+
+/* Override PCIe EP clocks and remove assigned-clock-rates */
+&pcie_ep {
+	clocks = <&clk IMX8MP_CLK_HSIO_AXI_DIV>,
+		 <&clk IMX8MP_CLK_PCIE_AUX>,
+		 <&clk IMX8MP_CLK_PCIE_PHY>,
+		 <&clk IMX8MP_CLK_PCIE_ROOT>;
+	/delete-property/ assigned-clock-rates;
+};
+
+/* UART3 is used for FMP3 (SAFEG64_SECURE_OS); remove clocks to prevent Linux from gating them */
+&uart3 {
+	/delete-property/ clocks;
+	/delete-property/ clock-names;
+	status = "disabled";
+};
+
+/* UART4 is used for ASP3 on Cortex-M7 (CM7_RTOS); remove clocks to prevent Linux from gating them */
+&uart4 {
+	/delete-property/ clocks;
+	/delete-property/ clock-names;
+	status = "disabled";
+};
