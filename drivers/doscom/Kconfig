@@ -1,0 +1,10 @@
+#
+# File: driver/doscom/Kconfig
+#
+config DOSCOM
+	bool "SafeG-COM"
+	default y
+	help
+	  Enable SafeG Dual-OS communications framework.
+
+# End of File: driver/doscom/Kconfig
