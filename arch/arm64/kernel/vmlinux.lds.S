@@ -125,6 +125,17 @@ SECTIONS
 			IRQENTRY_TEXT
 			SOFTIRQENTRY_TEXT
 			ENTRY_TEXT
+
+			/*
+			 * Isolate resident integrity-lkrg code
+			 * before collecting generic kernel text.
+			 */
+			. = ALIGN(PAGE_SIZE);
+			__integrity_lkrg_text_start = .;
+			*integrity-lkrg.o(.text .text.*)
+			. = ALIGN(PAGE_SIZE);
+			__integrity_lkrg_text_end = .;
+
 			TEXT_TEXT
 			SCHED_TEXT
 			CPUIDLE_TEXT
