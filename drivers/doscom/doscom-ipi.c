@@ -22,6 +22,7 @@
 #include <linux/cpu.h>
 #include <linux/kthread.h>
 #include <linux/delay.h>
+#include <linux/arm-smccc.h>
 #include "doscom_target_driver.h"
 
 /* Bit definitions inside the function id as per the SMC calling convention */
@@ -52,11 +53,14 @@
 #define SMC_TYPE_STD        0U
 #define SMC_PREEMPTED       0xfffffffe
 
+//#define OEN_TOS_SAFEG64     57
+#define OEN_TOS_SAFEG64     62
+
 /* SMC Function call IDs */
 #define ATFSMC_RV(func_num) \
         ((SMC_TYPE_FAST << FUNCID_TYPE_SHIFT) | \
          ((SMC_32) << FUNCID_CC_SHIFT) | \
-         (62 << FUNCID_OEN_SHIFT) | \
+         (OEN_TOS_SAFEG64 << FUNCID_OEN_SHIFT) | \
          ((func_num) & FUNCID_NUM_MASK))
 
 /* SETVCT: Set TOPPERS kernel entry points (fiq vector etc.) */
@@ -68,19 +72,19 @@
 /* SWITCH: initiates a switch to the opposite world */
 #define ATFSMC_SWITCH_SECURE_STATE  ATFSMC_RV(3)
 /* GENINT: Generate secure interrupt */
-#define ATFSMC_GEN_INT				ATFSMC_RV(4)
+#define ATFSMC_GEN_INT              ATFSMC_RV(4)
 
 /* SMC Function call return codes */
-#define	ATFSMC_RET_SUCCESS			0
-#define	ATFSMC_RET_INVALID_STATE	-1
-#define	ATFSMC_RET_NOT_READY		-2
+#define ATFSMC_RET_SUCCESS          0
+#define ATFSMC_RET_INVALID_STATE    -1
+#define ATFSMC_RET_NOT_READY        -2
 
 
 /*
  *  Global variables
  */
 static int                  r_ipi_hwirq = -1;
-static int					m_ipi_irq;
+static int                  m_ipi_irq;
 static int                  m_ipi_hwirq = -1;
 
 
@@ -101,8 +105,8 @@ static const struct of_device_id gic_match[];
  */
 static int  doscom_ipi_probe(struct platform_device *pdev)
 {
-	struct irq_data 	*irq_data;
-    int 				ret;
+    struct irq_data     *irq_data;
+    int                 ret;
 
     /*
      *  Get resoruce information from device tree
@@ -115,11 +119,11 @@ static int  doscom_ipi_probe(struct platform_device *pdev)
         return -ENODEV;
     }
 
-	irq_data = irq_get_irq_data(m_ipi_irq);
+    irq_data = irq_get_irq_data(m_ipi_irq);
     if( irq_data > 0 )  {
-		m_ipi_hwirq = irq_data->hwirq;
-	}
-	else  {
+        m_ipi_hwirq = irq_data->hwirq;
+    }
+    else  {
         dev_err(&pdev->dev, "DOSCOM: Failed to get DOSCOM-master IPI GIC IRQ.\n");
         return -ENODEV;
     }
@@ -127,7 +131,7 @@ static int  doscom_ipi_probe(struct platform_device *pdev)
     pr_info("DOSCOM: DOSCOM-master IPI GIC-IRQ : %d\n", m_ipi_hwirq);
 
     /* Get DOSCOM-remote IPI system IRQ  from device tree */
-	r_ipi_hwirq = DOSCOM_R_IPI_INTNO;
+    r_ipi_hwirq = DOSCOM_R_IPI_INTNO;
 
     pr_info("DOSCOM: DOSCOM-remote IPI GIC-IRQ : %d\n", r_ipi_hwirq);
 
@@ -175,14 +179,75 @@ static int  doscom_ipi_remove(struct platform_device *pdev)
  *  Argument : None
  *  Return :   None
  */
-void        doscom_ipi_generate_int(void)
+void doscom_ipi_generate_int(void)
 {
-	__asm__ volatile("mov	x1, %0"::"r"((uint64_t)r_ipi_hwirq));
-	__asm__ volatile("mov	x0, %0"::"r"(ATFSMC_GEN_INT));
-	__asm__ volatile("dsb sy":::"memory");
-	__asm__ volatile("smc 	#0");
+    /*
+     * [DEBUG] Print SMC arguments for x0 (Function ID) and x1 (Interrupt ID).
+     * ATFSMC_GEN_INT is the command ID for Secure World interrupt generation.
+     */
+    printk(KERN_EMERG "[DEBUG][DOSCOM-IPI]: SMC CALL - x0 (FUNC_ID): 0x%08x, x1 (IRQ_ID): %u\n",
+           (unsigned int)ATFSMC_GEN_INT, (unsigned int)r_ipi_hwirq);
+
+    __asm__ volatile("mov   x1, %0"::"r"((uint64_t)r_ipi_hwirq));
+    __asm__ volatile("mov   x0, %0"::"r"(ATFSMC_GEN_INT));
+    __asm__ volatile("dsb sy":::"memory");
+    __asm__ volatile("smc   #0");
 }
 EXPORT_SYMBOL(doscom_ipi_generate_int);
+
+/**
+ * Custom alert function to send LKRG details to TOPPERS.
+ * This reuses the existing SMC mechanism but ensures memory ordering.
+ */
+void doscom_send_lkrg_alert(void)
+{
+	uint64_t func_id = 0xbe000004;
+	uint64_t target_ids = 85;
+
+	printk(KERN_INFO "[ZT-IoT] Kernel IRQ set to %llu...\n", target_ids);
+
+	/* TEST 1: Standard DOSCOM via vendor function */
+	/*
+    printk(KERN_INFO "[TEST] 1. Calling vendor function (DOSCOM)...\n");
+	doscom_ipi_generate_int();
+    */
+
+	/* TEST 2: LKRG ALERT via direct SMC (Physical 84) */
+    __asm__ volatile (
+        "mov x0, %0\n\t"
+        "mov x1, %1\n\t"
+        "dsb sy\n\t"
+        "smc #0\n\t"
+        : : "r" (func_id), "r" (target_ids) : "x0", "x1", "memory"
+    );
+}
+EXPORT_SYMBOL(doscom_send_lkrg_alert);
+
+/*
+ * File: vender_sources/linux-imx/doscom/doscom-ipi.c
+ * Overview: Adding LKRG module integrity SMC notification trigger.
+ */
+
+int doscom_send_lkrg_integrity_notify(uint64_t phys_addr, uint64_t size)
+{
+	struct arm_smccc_res res;
+	u64 func_id;
+	u64 irq_num;
+
+	/* 1. Variables */
+	func_id = 0xbe000004U; /* SMC_FUNC_ID_GEN_INT */
+	irq_num = 87U;         /* IRQ_INTEGRITY_LKRG */
+
+	/* 2. Logic */
+	/* Issue SMC through standard arm_smccc_smc helper */
+	arm_smccc_smc(func_id, irq_num, phys_addr, size, 0, 0, 0, 0, &res);
+
+	pr_info("[ZT-IoT] doscom: Sent LKRG Integrity SMC (IRQ %llu, Phys: 0x%llx, Size: 0x%llx)\n",
+		irq_num, phys_addr, size);
+
+	return (int)res.a0;
+}
+EXPORT_SYMBOL_GPL(doscom_send_lkrg_integrity_notify);
 
 
 /*
