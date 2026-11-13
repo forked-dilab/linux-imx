@@ -1,0 +1,38 @@
+# linux-imx/security/integrity-zt/Kconfig
+
+config INTEGRITY_ZT_LKRG
+	bool "Zero-Trust Integrity Monitor for LKRG (Panic Mode)"
+	depends on CRYPTO_SHA256
+	default y
+
+choice
+	prompt "Integrity Capture Timing"
+	depends on INTEGRITY_ZT_LKRG
+	default INTEGRITY_ZT_CAPTURE_COMING
+	help
+	  Select when to capture the 'Gold Hash' of the LKRG module.
+
+config INTEGRITY_ZT_CAPTURE_COMING
+	bool "Capture on COMING (Pre-init)"
+	help
+	  This option enables periodic integrity monitoring of the LKRG module.
+	  If tampering is detected in the first 4KB of the .text section,
+	  the kernel will trigger an immediate Panic to protect the system.
+
+config INTEGRITY_ZT_CAPTURE_LIVE
+	bool "Capture on LIVE (Post-init)"
+	help
+	  Captures hash after the module is fully initialized and
+	  relocations/alternatives are applied. (Recommended)
+endchoice
+
+config INTEGRITY_ZT_CHECK_INTERVAL_SEC
+	int "Integrity Check Interval (seconds)"
+	depends on INTEGRITY_ZT_LKRG
+	range 1 3600
+	default 15
+	help
+	  Interval in seconds between periodic integrity checks.
+	  Lower values increase security but add CPU overhead.
+
+# End of File

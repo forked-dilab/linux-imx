@@ -34,3 +34,10 @@ obj-$(CONFIG_CGROUP_DEVICE)		+= device_cgroup.o
 # Object integrity file lists
 subdir-$(CONFIG_INTEGRITY)		+= integrity
 obj-$(CONFIG_INTEGRITY)			+= integrity/
+
+#
+obj-$(CONFIG_INTEGRITY_ZT_LKRG) += integrity-zt/
+
+#
+# End of File
+#
