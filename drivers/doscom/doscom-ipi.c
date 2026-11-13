@@ -173,7 +173,6 @@ static int  doscom_ipi_remove(struct platform_device *pdev)
 
 
 /*
- *  doscom_ipi_generate_int()
  *
  *  Function : This function generates interupt to the master processor.
  *  Argument : None
