@@ -7,19 +7,31 @@
 	reserved-memory {
 		/* Limit the upper bound to 0xB0000000 to avoid conflict with SafeG region (0xBE000000) */
 		linux,cma {
-			alloc-ranges = <0x0 0x40000000 0x0 0x70000000>;
+			alloc-ranges = <0x0 0x40000000 0x0 0x80000000>;
 		};
 
-		/* Reserved memory for SafeG64 RTOS */
-		safeg64_rtos {
+		/* RPMsg Communication Area for Cortex-M7 (8MB) */
+		rpmsg_reserved: rpmsg@55800000 {
+			no-map;
+			reg = <0 0x55800000 0 0x00800000>;
+		};
+
+		/* TOPPERS/FMP3 Secure OS Execution Region (16MB) */
+		safeg64_rtos: toppers@be000000 {
 			no-map;
 			reg = <0x0 0xBE000000 0x0 0x01000000>;
 		};
 
-		/* Reserved memory for SafeG64 inter-OS communication */
-		safeg64_com {
+		/* SafeG-COM Shared Memory for inter-processor communication (8MB) */
+		safeg64_com: shared_com@bf000000 {
 			no-map;
 			reg = <0x0 0xBF000000 0x0 0x00800000>;
+		};
+
+		/* ATF / Secure Monitor Reserved Workspace (8MB) */
+		secure_reserved: secure_reserved@bf800000 {
+			no-map;
+			reg = <0 0xbf800000 0 0x00800000>;
 		};
 	};
 
@@ -45,7 +57,7 @@
 };
 
 &A53_3 {
-	status = "offline";
+	status = "disabled";
 };
 
 /* Override PCIe clocks and remove unused properties */
