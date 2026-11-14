@@ -11,7 +11,7 @@
 		};
 
 		/* RPMsg Communication Area for Cortex-M7 (8MB) */
-		rpmsg_reserved: rpmsg@55800000 {
+		rpmsg_reserved: rpmsg@0x55800000 {
 			no-map;
 			reg = <0 0x55800000 0 0x00800000>;
 		};
