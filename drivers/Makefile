@@ -189,3 +189,5 @@ obj-$(CONFIG_COUNTER)		+= counter/
 obj-y		 		+= mxc/
 
 obj-$(CONFIG_DOSCOM) += doscom/
+
+obj-$(CONFIG_TOPMON) += topmon/

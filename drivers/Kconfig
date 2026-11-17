@@ -233,3 +233,5 @@ source "drivers/mxc/Kconfig"
 source "drivers/doscom/Kconfig"
 
 endmenu
+
+source "drivers/topmon/Kconfig"

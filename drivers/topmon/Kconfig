@@ -1,0 +1,31 @@
+# File: linux-imx/drivers/topmon/Kconfig
+# Overview: Configure the TOPMON parent switch and REE-to-TEE SMC notifications.
+
+menuconfig TOPMON
+    bool "TOPMON - Trusted Runtime Monitoring"
+    depends on ARM64
+    default y
+    help
+      Enable the TOPMON proof-of-concept infrastructure.
+
+if TOPMON
+
+config TOPMON_LKRG_ALERT
+    bool "LKRG alert notification to TEE (IRQ 85)"
+    default y
+    help
+      Send LKRG detection alerts to TOPPERS/FMP3 through SMC.
+      The LKRG module must be built consistently with this setting.
+
+config TOPMON_LKRG_TEE
+    bool
+    depends on TOPMON "TOPMON kernel-code integrity notification to TEE (IRQ 87)"
+    depends on CRYPTO_SHA256
+    default y
+    help
+      Publish the reference hash and physical location of the TOPMON
+      kernel-code section to TOPPERS/FMP3.
+
+endif
+
+# End of File: linux-imx/drivers/topmon/Kconfig

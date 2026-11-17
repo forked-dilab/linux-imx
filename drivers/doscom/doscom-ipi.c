@@ -194,61 +194,6 @@ void doscom_ipi_generate_int(void)
 }
 EXPORT_SYMBOL(doscom_ipi_generate_int);
 
-/**
- * Custom alert function to send LKRG details to TOPPERS.
- * This reuses the existing SMC mechanism but ensures memory ordering.
- */
-void doscom_send_lkrg_alert(void)
-{
-	uint64_t func_id = 0xbe000004;
-	uint64_t target_ids = 85;
-
-	printk(KERN_INFO "[ZT-IoT] Kernel IRQ set to %llu...\n", target_ids);
-
-	/* TEST 1: Standard DOSCOM via vendor function */
-	/*
-    printk(KERN_INFO "[TEST] 1. Calling vendor function (DOSCOM)...\n");
-	doscom_ipi_generate_int();
-    */
-
-	/* TEST 2: LKRG ALERT via direct SMC (Physical 84) */
-    __asm__ volatile (
-        "mov x0, %0\n\t"
-        "mov x1, %1\n\t"
-        "dsb sy\n\t"
-        "smc #0\n\t"
-        : : "r" (func_id), "r" (target_ids) : "x0", "x1", "memory"
-    );
-}
-EXPORT_SYMBOL(doscom_send_lkrg_alert);
-
-/*
- * File: vender_sources/linux-imx/doscom/doscom-ipi.c
- * Overview: Adding LKRG module integrity SMC notification trigger.
- */
-
-int doscom_send_lkrg_integrity_notify(uint64_t phys_addr, uint64_t size)
-{
-	struct arm_smccc_res res;
-	u64 func_id;
-	u64 irq_num;
-
-	/* 1. Variables */
-	func_id = 0xbe000004U; /* SMC_FUNC_ID_GEN_INT */
-	irq_num = 87U;         /* IRQ_INTEGRITY_LKRG */
-
-	/* 2. Logic */
-	/* Issue SMC through standard arm_smccc_smc helper */
-	arm_smccc_smc(func_id, irq_num, phys_addr, size, 0, 0, 0, 0, &res);
-
-	pr_info("[ZT-IoT] doscom: Sent LKRG Integrity SMC (IRQ %llu, Phys: 0x%llx, Size: 0x%llx)\n",
-		irq_num, phys_addr, size);
-
-	return (int)res.a0;
-}
-EXPORT_SYMBOL_GPL(doscom_send_lkrg_integrity_notify);
-
-
 /*
  *  Tables
  */
