@@ -127,12 +127,15 @@ SECTIONS
 			ENTRY_TEXT
 
 			/*
-			 * Isolate resident integrity-lkrg code
-			 * before collecting generic kernel text.
-			 */
+			* Isolate resident TOPMON monitoring code
+			* before collecting generic kernel text.
+			*/
 			. = ALIGN(PAGE_SIZE);
 			__topmon_lkrg_integrity_text_start = .;
-			*topmon-monitor.o(.text .text.*)
+
+			*security/topmon/topmon-lkrg-integrity-check.o(.text .text.*)
+			*security/topmon/topmon-lkrg-integrity-notifier.o(.text .text.*)
+
 			. = ALIGN(PAGE_SIZE);
 			__topmon_lkrg_integrity_text_end = .;
 

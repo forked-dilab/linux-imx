@@ -29,7 +29,7 @@ int smc_topmon_lkrg_integrity(u64 phys_addr, u64 size)
 
     return (int)result.a0;
 }
-EXPORT_SYMBOL_GPL(smc_topmon_lkrg);
+EXPORT_SYMBOL_GPL(smc_topmon_lkrg_integrity);
 
 /*
  * End of File: linux-imx/drivers/topmon/topmon-lkrg-integrity.c

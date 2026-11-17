@@ -24,6 +24,7 @@ int topmon_lkrg_verify_target(void)
     /* Variables */
     u8 current_hash[TOPMON_HASH_SIZE];
     int result;
+    static bool inactive_logged;
 
     /* Assignments */
     result = 0;
@@ -31,14 +32,29 @@ int topmon_lkrg_verify_target(void)
 
     /* Logic */
     mutex_lock(&topmon_target_lock);
-    if (!topmon_target.active)
+    if (!topmon_target.active) {
+        if (!inactive_logged) {
+            pr_info(TOPMON_LOG_PREFIX
+                    "[LKRG][CHECK]: Skipped (LKRG not active)\n");
+            inactive_logged = true;
+        }
         goto unlock;
+    }
+    inactive_logged = false;
 
     result = topmon_calculate_sha256(
         (const u8 *)topmon_target.text_start,
         topmon_target.text_size, current_hash);
-    if (result)
+    if (result) {
+        pr_err(TOPMON_LOG_PREFIX
+               "[LKRG][CHECK]: SHA-256 calculation failed: %d\n", result);
         goto unlock;
+    }
+
+    pr_info(TOPMON_LOG_PREFIX "[LKRG][CHECK][GOLD]: %*phN\n",
+            TOPMON_HASH_SIZE, topmon_target.reference_hash);
+    pr_info(TOPMON_LOG_PREFIX "[LKRG][CHECK][CURR]: %*phN\n",
+            TOPMON_HASH_SIZE, current_hash);
 
     if (memcmp(topmon_target.reference_hash, current_hash,
                TOPMON_HASH_SIZE) != 0) {
@@ -49,6 +65,9 @@ int topmon_lkrg_verify_target(void)
                  TOPMON_HASH_SIZE, current_hash);
         emergency_restart();
         result = -EKEYREJECTED;
+    } else {
+        pr_info(TOPMON_LOG_PREFIX
+                "[LKRG][CHECK]: Periodic Verification Passed.\n");
     }
 
 unlock:
@@ -104,6 +123,9 @@ static int topmon_lkrg_module_event(struct notifier_block *notifier,
     topmon_target.text_size = text_size;
     memcpy(topmon_target.reference_hash, initial_hash, TOPMON_HASH_SIZE);
     topmon_target.active = true;
+    pr_info(TOPMON_LOG_PREFIX
+            "[LKRG][INIT]: Target VA=%px, size=%zu bytes\n",
+            (void *)text_start, text_size);
     pr_info(TOPMON_LOG_PREFIX "LKRG reference hash captured (%s).\n",
             TOPMON_CAPTURE_NAME);
     pr_info(TOPMON_LOG_PREFIX "REF-HASH: %*phN\n",

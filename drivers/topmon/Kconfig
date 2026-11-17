@@ -1,5 +1,13 @@
 # File: linux-imx/drivers/topmon/Kconfig
 # Overview: Configure the TOPMON parent switch and REE-to-TEE SMC notifications.
+#
+# Configuration:
+#   TOPMON
+#     - Enable the TOPMON infrastructure.
+#   TOPMON_LKRG_ALERT
+#     - Enable LKRG alert notification to TEE.
+#   TOPMON_LKRG_TEE
+#     - Enable TOPMON kernel-code integrity notification to TEE.
 
 menuconfig TOPMON
     bool "TOPMON - Trusted Runtime Monitoring"
@@ -18,8 +26,7 @@ config TOPMON_LKRG_ALERT
       The LKRG module must be built consistently with this setting.
 
 config TOPMON_LKRG_TEE
-    bool
-    depends on TOPMON "TOPMON kernel-code integrity notification to TEE (IRQ 87)"
+    bool "TOPMON kernel-code integrity notification to TEE (IRQ 87)"
     depends on CRYPTO_SHA256
     default y
     help
