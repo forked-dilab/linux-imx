@@ -1,0 +1,41 @@
+# File: linux-imx/security/topmon/Kconfig
+# Overview: Configure LKRG integrity monitoring and reference-hash capture.
+
+if TOPMON
+
+config TOPMON_LKRG
+    bool "LKRG module integrity monitoring"
+    depends on TOPMON && CRYPTO_SHA256 && MODULES
+    default y
+    help
+      Monitor the loaded LKRG module text and restart on a hash mismatch.
+
+if TOPMON_LKRG
+
+choice
+    prompt "LKRG reference hash capture timing"
+    default TOPMON_LKRG_CAPTURE_LIVE
+
+config TOPMON_LKRG_CAPTURE_COMING
+    bool "COMING - capture during module loading"
+
+config TOPMON_LKRG_CAPTURE_LIVE
+    bool "LIVE - capture after module initialization (recommended)"
+
+endchoice
+
+config TOPMON_LKRG_CHECK_INTERVAL_SEC
+    int "LKRG integrity check interval (seconds)"
+    range 1 3600
+    default 15
+
+endif
+
+config TOPMON_CORE
+    bool
+    depends on TOPMON
+    default y if TOPMON_LKRG || TOPMON_LKRG_TEE
+
+endif
+
+# End of File: linux-imx/security/topmon/Kconfig

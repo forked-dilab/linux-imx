@@ -291,7 +291,7 @@ config LSM
 
 source "security/Kconfig.hardening"
 
-source "security/integrity-zt/Kconfig"
+source "security/topmon/Kconfig"
 
 endmenu
 

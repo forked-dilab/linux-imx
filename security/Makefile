@@ -36,7 +36,7 @@ subdir-$(CONFIG_INTEGRITY)		+= integrity
 obj-$(CONFIG_INTEGRITY)			+= integrity/
 
 #
-obj-$(CONFIG_INTEGRITY_ZT_LKRG) += integrity-zt/
+obj-$(CONFIG_TOPMON_CORE) += topmon/
 
 #
 # End of File
