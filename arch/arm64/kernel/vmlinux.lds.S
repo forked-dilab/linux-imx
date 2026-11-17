@@ -131,10 +131,10 @@ SECTIONS
 			 * before collecting generic kernel text.
 			 */
 			. = ALIGN(PAGE_SIZE);
-			__integrity_lkrg_text_start = .;
-			*integrity-lkrg.o(.text .text.*)
+			__topmon_lkrg_integrity_text_start = .;
+			*topmon-monitor.o(.text .text.*)
 			. = ALIGN(PAGE_SIZE);
-			__integrity_lkrg_text_end = .;
+			__topmon_lkrg_integrity_text_end = .;
 
 			TEXT_TEXT
 			SCHED_TEXT
