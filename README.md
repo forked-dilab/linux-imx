@@ -1,3 +1,6 @@
+> **Note:** This repository is a fork of [nxp-imx/linux-imx](https://github.com/nxp-imx/linux-imx.git) for specific modifications.
+> Please refer to the [linux-imx](https://github.com/nxp-imx/linux-imx.git) for the latest version and upstream updates.
+
 Linux kernel
 ============
 
